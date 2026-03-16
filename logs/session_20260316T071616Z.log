@@ -1,0 +1,157 @@
+2026-03-16 14:16:16,602 [INFO] __main__: Session log file: /Users/cerberose/Work/mas-centralize/logs/session_20260316T071616Z.log
+2026-03-16 14:16:16,603 [INFO] __main__: Opening MCP connections: ['fs_docs', 'playwright', 'git', 'fs_code', 'fs_board']
+2026-03-16 14:16:16,603 [INFO] core.mcp_client: [MCPClient:fs_docs] connecting – npx ['-y', '@modelcontextprotocol/server-filesystem', '/Users/cerberose/Work/mas-centralize/data/knowledge_base']
+2026-03-16 14:16:16,605 [INFO] core.mcp_client: [MCPClient:playwright] connecting – npx ['-y', '@playwright/mcp@latest']
+2026-03-16 14:16:16,605 [INFO] core.mcp_client: [MCPClient:git] connecting – mcp-server-git ['--repository', '/Users/cerberose/Work/mas-centralize/data/workspace']
+2026-03-16 14:16:16,605 [INFO] core.mcp_client: [MCPClient:fs_code] connecting – npx ['-y', '@modelcontextprotocol/server-filesystem', '/Users/cerberose/Work/mas-centralize/data/workspace']
+2026-03-16 14:16:16,605 [INFO] core.mcp_client: [MCPClient:fs_board] connecting – npx ['-y', '@modelcontextprotocol/server-filesystem', '/Users/cerberose/Work/mas-centralize/data/project_board']
+2026-03-16 14:16:17,722 [INFO] core.mcp_client: [MCPClient:playwright] connected
+2026-03-16 14:16:17,723 [ERROR] core.mcp_client: [MCPClientPool] failed to connect 'fs_docs': Connection closed
+2026-03-16 14:16:17,723 [ERROR] core.mcp_client: [MCPClientPool] failed to connect 'git': Connection closed
+2026-03-16 14:16:17,723 [ERROR] core.mcp_client: [MCPClientPool] failed to connect 'fs_code': Connection closed
+2026-03-16 14:16:17,723 [ERROR] core.mcp_client: [MCPClientPool] failed to connect 'fs_board': Connection closed
+2026-03-16 14:16:17,731 [ERROR] asyncio: an error occurred during closing of asynchronous generator <async_generator object stdio_client at 0x110ab7610>
+asyncgen: <async_generator object stdio_client at 0x110ab7610>
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 783, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | BaseExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/mcp/client/stdio/__init__.py", line 189, in stdio_client
+    |     yield read_stream, write_stream
+    | GeneratorExit
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/mcp/client/stdio/__init__.py", line 183, in stdio_client
+    anyio.create_task_group() as tg,
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 789, in __aexit__
+    if self.cancel_scope.__exit__(type(exc), exc, exc.__traceback__):
+       ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 461, in __exit__
+    raise RuntimeError(
+    ...<2 lines>...
+    )
+RuntimeError: Attempted to exit cancel scope in a different task than it was entered in
+2026-03-16 14:16:17,733 [ERROR] asyncio: an error occurred during closing of asynchronous generator <async_generator object stdio_client at 0x110b38040>
+asyncgen: <async_generator object stdio_client at 0x110b38040>
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 783, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | BaseExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/mcp/client/stdio/__init__.py", line 189, in stdio_client
+    |     yield read_stream, write_stream
+    | GeneratorExit
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/mcp/client/stdio/__init__.py", line 183, in stdio_client
+    anyio.create_task_group() as tg,
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 789, in __aexit__
+    if self.cancel_scope.__exit__(type(exc), exc, exc.__traceback__):
+       ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 461, in __exit__
+    raise RuntimeError(
+    ...<2 lines>...
+    )
+RuntimeError: Attempted to exit cancel scope in a different task than it was entered in
+2026-03-16 14:16:17,734 [ERROR] asyncio: an error occurred during closing of asynchronous generator <async_generator object stdio_client at 0x110ab6110>
+asyncgen: <async_generator object stdio_client at 0x110ab6110>
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 783, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | BaseExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/mcp/client/stdio/__init__.py", line 189, in stdio_client
+    |     yield read_stream, write_stream
+    | GeneratorExit
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/mcp/client/stdio/__init__.py", line 183, in stdio_client
+    anyio.create_task_group() as tg,
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 789, in __aexit__
+    if self.cancel_scope.__exit__(type(exc), exc, exc.__traceback__):
+       ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 461, in __exit__
+    raise RuntimeError(
+    ...<2 lines>...
+    )
+RuntimeError: Attempted to exit cancel scope in a different task than it was entered in
+2026-03-16 14:16:17,734 [ERROR] asyncio: an error occurred during closing of asynchronous generator <async_generator object stdio_client at 0x110ab7b50>
+asyncgen: <async_generator object stdio_client at 0x110ab7b50>
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 783, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | BaseExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/mcp/client/stdio/__init__.py", line 189, in stdio_client
+    |     yield read_stream, write_stream
+    | GeneratorExit
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/mcp/client/stdio/__init__.py", line 183, in stdio_client
+    anyio.create_task_group() as tg,
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 789, in __aexit__
+    if self.cancel_scope.__exit__(type(exc), exc, exc.__traceback__):
+       ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 461, in __exit__
+    raise RuntimeError(
+    ...<2 lines>...
+    )
+RuntimeError: Attempted to exit cancel scope in a different task than it was entered in
+2026-03-16 14:16:17,735 [ERROR] asyncio: an error occurred during closing of asynchronous generator <async_generator object stdio_client at 0x110ab5fc0>
+asyncgen: <async_generator object stdio_client at 0x110ab5fc0>
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 783, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | BaseExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/mcp/client/stdio/__init__.py", line 189, in stdio_client
+    |     yield read_stream, write_stream
+    | GeneratorExit
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/mcp/client/stdio/__init__.py", line 183, in stdio_client
+    anyio.create_task_group() as tg,
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 789, in __aexit__
+    if self.cancel_scope.__exit__(type(exc), exc, exc.__traceback__):
+       ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 461, in __exit__
+    raise RuntimeError(
+    ...<2 lines>...
+    )
+RuntimeError: Attempted to exit cancel scope in a different task than it was entered in

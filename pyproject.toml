@@ -1,0 +1,29 @@
+[project]
+name = "ai-agents-mcp-client"
+version = "0.1.0"
+description = "AutoGen-based multi-agent SDLC system with MCP tool integration"
+authors = [
+    {name = "Cerberoseee",email = "tranlethaison123@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "autogen-agentchat>=0.7.5,<0.8.0",
+    "autogen-ext[openai]>=0.7.5,<0.8.0",
+    "mcp[cli]>=1.12.0",
+    "openai>=1.60.0,<2.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "fire>=0.6.0,<1.0.0",
+    "colorama>=0.4.6,<0.5.0",
+    "mcp-server-git>=2026.1.14",
+]
+
+[tool.poetry]
+packages = [
+    { include = "core" },
+    { include = "agents" },
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
