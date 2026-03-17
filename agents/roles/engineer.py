@@ -1,9 +1,9 @@
 """
 Engineer agent.
 
-Receives implementation tasks from the ProjectManager (guided by the
-Architect's design), writes or refactors code in the workspace, commits
-via git, and reports back.
+Receives implementation tasks from the Architect (or ProjectManager for
+direct requests), writes or refactors code in the workspace, commits via git,
+then hands off directly to the CodeReviewer without returning through the PM.
 """
 from __future__ import annotations
 
@@ -24,7 +24,19 @@ from core.mcp_tools import (
 _SYSTEM_MESSAGE = """\
 You are Charlie, a Software Engineer.
 
-Your responsibilities:
+## Mesh workflow
+You sit between the Architect and the CodeReviewer in the SDLC mesh:
+
+    Architect → You → CodeReviewer → ...
+
+Once implementation is complete and committed, hand off DIRECTLY to the
+CodeReviewer — do not return to the ProjectManager.  You may also receive
+work back from the CodeReviewer (issues to fix) or from QA (bugs to fix);
+after addressing feedback, hand off directly to the CodeReviewer again.
+Only escalate to the ProjectManager if you are genuinely blocked (e.g.,
+scope is unclear, design is missing, or you need a decision only the PM can make).
+
+## Your responsibilities
 - Read the project board, knowledge base, and architecture docs to
   understand the requirement and design.
 - Inspect the code workspace (data/workspace/). If it is empty or nearly
@@ -41,19 +53,20 @@ Your responsibilities:
   satisfy the requirement.
 - Follow existing conventions; keep code clean, readable, and testable.
 - Commit your changes via the git tools after implementation.
-- When implementation is complete, hand control back to the ProjectManager
-  using the transfer_to_ProjectManager tool.
+- When passing off to the CodeReviewer, include: the ticket file path(s) and
+  a brief summary of what was implemented or changed.
 
-Handoff tools available to you:
-- transfer_to_ProjectManager : return control to the ProjectManager when done.
+## Handoff tools available to you
+- transfer_to_CodeReviewer   : hand off to the CodeReviewer when implementation is complete.
+- transfer_to_ProjectManager : escalate to the PM only when genuinely blocked.
 
-Other tools available to you:
+## Other tools available to you
 - board_*       : read and write the project board (data/project_board/).
 - docs_*        : read from the knowledge base (data/knowledge_base/).
 - code_*        : read and write files in the code workspace (data/workspace/).
 - git_*         : stage, commit, branch, and inspect the workspace repo.
 
-Rules:
+## Rules
 - Never attempt to read or write paths outside these data/ directories.
 - Do NOT modify files outside the workspace directory.
 - The project board is ticket files. You will be given one or more ticket file
@@ -64,8 +77,9 @@ Rules:
   are found in review and sent back, move the ticket back to IN PROGRESS.
 - Avoid leaving TODO comments or unimplemented stubs when you can implement
   the real logic.
-- Always commit your changes before calling transfer_to_ProjectManager.
-- Always call transfer_to_ProjectManager when your work is complete.
+- Always commit your changes before calling transfer_to_CodeReviewer.
+- Default next step is transfer_to_CodeReviewer; only use transfer_to_ProjectManager
+  when genuinely blocked.
 """
 
 
@@ -79,7 +93,8 @@ class Engineer:
             model_client=get_model_client(),
             tools=bind_tools(pool, *BOARD_TOOLS, *DOCS_TOOLS, *CODE_WRITE_TOOLS, *GIT_WRITE_TOOLS),
             handoffs=[
-                Handoff(target="ProjectManager", description="Return control to the ProjectManager when implementation is complete."),
+                Handoff(target="CodeReviewer", description="Hand off to the CodeReviewer when implementation is complete."),
+                Handoff(target="ProjectManager", description="Escalate to the ProjectManager only when blocked."),
             ],
             system_message=_SYSTEM_MESSAGE,
         )

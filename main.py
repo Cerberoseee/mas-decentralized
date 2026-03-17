@@ -1,20 +1,20 @@
 """
 SDLC entry point.
 
-Orchestrates the AutoGen hub-and-spoke multi-agent workflow:
+Orchestrates the AutoGen mesh multi-agent workflow:
 
-    UserProxy  →  ProjectManager  ↔  Architect
-                                  ↔  Engineer
-                                  ↔  CodeReviewer
-                                  ↔  QA
+    User → ProjectManager → Architect → Engineer → CodeReviewer → QA → ProjectManager
+                                                         ↑    ↓
+                                                      Engineer ← (issues)
+                                              Engineer ←────── QA (bugs)
 
-The ProjectManager is the central hub.  It receives the user idea, delegates
-tasks to each specialist via explicit handoffs (transfer_to_* tools), and each
-specialist hands control back to the PM when done.  The PM decides next steps
-at every stage.
+The ProjectManager kicks off the workflow and receives the final completion
+signal.  Specialists hand off directly to each other along the natural SDLC
+path; the PM is bypassed for routine inter-specialist transitions.  Any agent
+can escalate back to the PM when blocked.
 
 The team uses AutoGen's Swarm pattern: agents transfer control to each other
-via HandoffMessage rather than taking turns blindly.
+via HandoffMessage (transfer_to_* tools) rather than taking turns blindly.
 
 Usage
 -----
@@ -111,9 +111,10 @@ async def start_sdlc(idea: str, rounds: int = 20) -> str:
             | MaxMessageTermination(max_messages=rounds)
         )
 
-        # --- Hub-and-spoke team (Swarm) ---
-        # Swarm routes control via HandoffMessage: PM uses transfer_to_* tools
-        # to delegate to specialists; each specialist transfers back to PM.
+        # --- Mesh team (Swarm) ---
+        # Swarm routes control via HandoffMessage (transfer_to_* tools).
+        # Specialists hand off directly to their natural downstream peer;
+        # the PM only re-enters on escalation or final completion.
         # The initial task is delivered to the first participant (PM).
         team = Swarm(
             participants=[

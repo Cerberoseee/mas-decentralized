@@ -1,4 +1,4 @@
-# mas-centralize
+# mas-decentralized
 
 An AutoGen-based multi-agent system that runs a full Software Development Life Cycle (SDLC) workflow from a single natural-language idea. A team of AI agents — each with a distinct role and access to scoped MCP tool servers — collaborates to plan, design, implement, review, and QA software projects autonomously.
 
@@ -6,17 +6,33 @@ An AutoGen-based multi-agent system that runs a full Software Development Life C
 
 ## How it works
 
-The system uses a **hub-and-spoke** architecture built on [AutoGen](https://microsoft.github.io/autogen/) `RoundRobinGroupChat`. The **Project Manager** is the central hub; all other agents report to and receive tasks from it.
+The system uses a **mesh** architecture built on [AutoGen](https://microsoft.github.io/autogen/) `Swarm`. Agents hand off directly to their natural downstream peer; the **Project Manager** acts as a strategic orchestrator rather than a routing hub, re-entering the flow only on escalation or final completion.
 
 ```
 User idea
     │
     ▼
-ProjectManager (Alice) ──── Architect (Bob)
-        │                ── Engineer (Charlie)
-        │                ── CodeReviewer (Diana)
-        └────────────────── QA (Eve)
+ProjectManager (Alice)
+    │
+    ▼
+Architect (Bob) ──────────────────────────────────────────┐
+    │                                                      │ escalate
+    ▼                                                      │
+Engineer (Charlie) ◄─────────────────────────────── CodeReviewer (Dave)
+    │   ▲                                                  │
+    │   └──────────────────────────── QA (Eve) (bugs)      │ approve
+    │                                     │                │
+    │                                     └────────────────┘
+    │                                          │
+    └──────── (commit) ────────────────────────┘
+                                               │
+                                    ProjectManager ← final report
 ```
+
+Specialists loop back without PM involvement:
+- **CodeReviewer → Engineer** when issues are found
+- **QA → Engineer** when bugs are found
+- **Any agent → PM** only when genuinely blocked
 
 Each agent is backed by an LLM and has access to a curated set of [MCP](https://modelcontextprotocol.io/) tool servers that scope what it can read and write.
 
@@ -24,11 +40,28 @@ Each agent is backed by an LLM and has access to a curated set of [MCP](https://
 
 | Agent | Persona | Responsibilities | MCP access |
 |---|---|---|---|
-| **ProjectManager** | Alice | Breaks down ideas into tickets, drives the team, writes the final summary | `fs_board`, `fs_docs` |
-| **Architect** | Bob | Produces system design and architecture docs | `fs_board`, `fs_docs`, `fs_code` |
-| **Engineer** | Charlie | Implements code in the workspace, commits via git | `fs_board`, `fs_docs`, `fs_code`, `git` |
-| **CodeReviewer** | Diana | Reviews code for quality, correctness, and conventions | `fs_docs`, `fs_code`, `git` |
-| **QA** | Eve | Tests the implementation and reports results | `fs_board`, `fs_code` |
+| **ProjectManager** | Alice | Breaks down ideas into tickets, kicks off the workflow, writes the final summary | `fs_board`, `fs_docs` |
+| **Architect** | Bob | Produces system design and architecture docs, hands off directly to Engineer | `fs_board`, `fs_docs`, `fs_code` |
+| **Engineer** | Charlie | Implements code in the workspace, commits via git, hands off directly to CodeReviewer | `fs_board`, `fs_docs`, `fs_code`, `git` |
+| **CodeReviewer** | Dave | Reviews code; routes to QA (approved) or back to Engineer (issues) | `fs_board`, `fs_docs`, `fs_code`, `git` |
+| **QA** | Eve | Tests the implementation; routes back to Engineer (bugs) or to PM (all clear) | `fs_board`, `fs_code` |
+
+### Handoff graph
+
+| From | To | Condition |
+|---|---|---|
+| ProjectManager | Architect | Start new work |
+| ProjectManager | Engineer | Skip design (trivial change / hotfix) |
+| ProjectManager | CodeReviewer / QA | Out-of-band intervention |
+| Architect | Engineer | Design complete *(primary path)* |
+| Architect | ProjectManager | Blocked — requirements unclear |
+| Engineer | CodeReviewer | Implementation complete *(primary path)* |
+| Engineer | ProjectManager | Blocked — scope/design missing |
+| CodeReviewer | QA | Code approved *(primary path)* |
+| CodeReviewer | Engineer | Issues found |
+| CodeReviewer | ProjectManager | Scope/business decision needed |
+| QA | ProjectManager | All tests pass — final report *(primary path)* |
+| QA | Engineer | Bugs found |
 
 ### MCP servers
 
@@ -44,7 +77,7 @@ Each agent is backed by an LLM and has access to a curated set of [MCP](https://
 ## Project structure
 
 ```
-mas-centralize/
+mas-decentralized/
 ├── main.py                  # CLI entry point & SDLC orchestration
 ├── agents/
 │   ├── __init__.py
@@ -87,7 +120,7 @@ mas-centralize/
 
 ```bash
 git clone <repo-url>
-cd mas-centralize
+cd mas-decentralized
 uv sync
 ```
 
@@ -126,7 +159,7 @@ uv run python main.py "<your idea>" [--rounds N]
 | Argument | Description | Default |
 |---|---|---|
 | `idea` | Natural-language description of what to build | *(required)* |
-| `--rounds` | Maximum number of agent messages before the workflow stops | `50` |
+| `--rounds` | Maximum number of agent messages before the workflow stops | `100` |
 
 ### Examples
 
@@ -159,9 +192,11 @@ Set `AUTOGEN_MODEL` in `.env` to any OpenAI-compatible model name (e.g. `gpt-4o`
 ### Adding a new agent role
 
 1. Create `agents/roles/<role>.py` following the pattern of existing roles.
-2. Add the new class to `agents/__init__.py`.
-3. Register the role's allowed MCP servers in `core/mcp_config.py` under `ROLE_SERVERS`.
-4. Instantiate the agent in `main.py` and add it to the `RoundRobinGroupChat` participants list.
+2. Declare `Handoff` objects for each peer the role can hand off to (primary path + `ProjectManager` as escalation fallback).
+3. Update the `Handoff` lists of any existing agents that should be able to route to the new role.
+4. Add the new class to `agents/__init__.py`.
+5. Register the role's allowed MCP servers in `core/mcp_config.py` under `ROLE_SERVERS`.
+6. Instantiate the agent in `main.py` and add it to the `Swarm` participants list.
 
 ### Adding a new MCP server
 
