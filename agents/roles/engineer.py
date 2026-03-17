@@ -8,6 +8,7 @@ via git, and reports back.
 from __future__ import annotations
 
 from autogen_agentchat.agents import AssistantAgent
+from autogen_agentchat.base import Handoff
 
 from core.autogen_config import get_model_client
 from core.mcp_client import MCPClientPool
@@ -40,10 +41,14 @@ Your responsibilities:
   satisfy the requirement.
 - Follow existing conventions; keep code clean, readable, and testable.
 - Commit your changes via the git tools after implementation.
-- Report completed work back to the ProjectManager.
+- When implementation is complete, hand control back to the ProjectManager
+  using the transfer_to_ProjectManager tool.
 
-Tools available to you:
-- board_*       : read from the project board (data/project_board/).
+Handoff tools available to you:
+- transfer_to_ProjectManager : return control to the ProjectManager when done.
+
+Other tools available to you:
+- board_*       : read and write the project board (data/project_board/).
 - docs_*        : read from the knowledge base (data/knowledge_base/).
 - code_*        : read and write files in the code workspace (data/workspace/).
 - git_*         : stage, commit, branch, and inspect the workspace repo.
@@ -51,14 +56,16 @@ Tools available to you:
 Rules:
 - Never attempt to read or write paths outside these data/ directories.
 - Do NOT modify files outside the workspace directory.
-- When you start work on a ticket, update its Status on the project board
-  from TO DO to IN PROGRESS. When you hand work off for review, move the
-  ticket to IN REVIEW. When issues are found in review and sent back, move
-  the ticket back to IN PROGRESS.
+- The project board is ticket files. You will be given one or more ticket file
+  paths (typically under data/project_board/tickets/). Update ONLY those ticket
+  files (and optionally the board index) to reflect reality.
+- When you start work on a ticket, update its Status from TO DO to IN PROGRESS.
+  When you hand work off for review, move the ticket to IN REVIEW. When issues
+  are found in review and sent back, move the ticket back to IN PROGRESS.
 - Avoid leaving TODO comments or unimplemented stubs when you can implement
   the real logic.
-- Always commit your changes before reporting back.
-- When implementation is complete, end your reply with "IMPLEMENTATION COMPLETE".
+- Always commit your changes before calling transfer_to_ProjectManager.
+- Always call transfer_to_ProjectManager when your work is complete.
 """
 
 
@@ -71,5 +78,8 @@ class Engineer:
             name="Engineer",
             model_client=get_model_client(),
             tools=bind_tools(pool, *BOARD_TOOLS, *DOCS_TOOLS, *CODE_WRITE_TOOLS, *GIT_WRITE_TOOLS),
+            handoffs=[
+                Handoff(target="ProjectManager", description="Return control to the ProjectManager when implementation is complete."),
+            ],
             system_message=_SYSTEM_MESSAGE,
         )

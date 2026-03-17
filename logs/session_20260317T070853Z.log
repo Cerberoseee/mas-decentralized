@@ -1,0 +1,9 @@
+2026-03-17 14:08:53,179 [INFO] __main__: Session log file: /Users/cerberose/Work/mas-centralize/logs/session_20260317T070853Z.log
+2026-03-17 14:08:53,179 [INFO] __main__: Opening MCP connections: ['git', 'playwright', 'fs_board', 'fs_docs', 'fs_code']
+2026-03-17 14:08:53,180 [INFO] core.mcp_client: [MCPClient:git] connecting – mcp-server-git ['--repository', '/Users/cerberose/Work/mas-centralize/data/workspace']
+2026-03-17 14:08:53,182 [INFO] core.mcp_client: [MCPClient:playwright] connecting – npx ['-y', '@playwright/mcp@latest']
+2026-03-17 14:08:53,182 [INFO] core.mcp_client: [MCPClient:fs_board] connecting – npx ['-y', '@modelcontextprotocol/server-filesystem', '/Users/cerberose/Work/mas-centralize/data/project_board']
+2026-03-17 14:08:53,182 [INFO] core.mcp_client: [MCPClient:fs_docs] connecting – npx ['-y', '@modelcontextprotocol/server-filesystem', '/Users/cerberose/Work/mas-centralize/data/knowledge_base']
+2026-03-17 14:08:53,182 [INFO] core.mcp_client: [MCPClient:fs_code] connecting – npx ['-y', '@modelcontextprotocol/server-filesystem', '/Users/cerberose/Work/mas-centralize/data/workspace']
+2026-03-17 14:08:54,257 [INFO] core.mcp_client: [MCPClient:fs_code] connected
+2026-03-17 14:08:54,258 [INFO] core.mcp_client: [MCPClient:fs_board] connected

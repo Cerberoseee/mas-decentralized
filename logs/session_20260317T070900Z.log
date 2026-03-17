@@ -1,0 +1,12 @@
+2026-03-17 14:09:00,655 [INFO] __main__: Session log file: /Users/cerberose/Work/mas-centralize/logs/session_20260317T070900Z.log
+2026-03-17 14:09:00,655 [INFO] __main__: Opening MCP connections: ['playwright', 'fs_board', 'fs_code', 'fs_docs', 'git']
+2026-03-17 14:09:00,655 [INFO] core.mcp_client: [MCPClient:playwright] connecting – npx ['-y', '@playwright/mcp@latest']
+2026-03-17 14:09:00,657 [INFO] core.mcp_client: [MCPClient:fs_board] connecting – npx ['-y', '@modelcontextprotocol/server-filesystem', '/Users/cerberose/Work/mas-centralize/data/project_board']
+2026-03-17 14:09:00,657 [INFO] core.mcp_client: [MCPClient:fs_code] connecting – npx ['-y', '@modelcontextprotocol/server-filesystem', '/Users/cerberose/Work/mas-centralize/data/workspace']
+2026-03-17 14:09:00,657 [INFO] core.mcp_client: [MCPClient:fs_docs] connecting – npx ['-y', '@modelcontextprotocol/server-filesystem', '/Users/cerberose/Work/mas-centralize/data/knowledge_base']
+2026-03-17 14:09:00,657 [INFO] core.mcp_client: [MCPClient:git] connecting – mcp-server-git ['--repository', '/Users/cerberose/Work/mas-centralize/data/workspace']
+2026-03-17 14:09:01,525 [INFO] core.mcp_client: [MCPClient:fs_board] connected
+2026-03-17 14:09:01,593 [INFO] core.mcp_client: [MCPClient:fs_code] connected
+2026-03-17 14:09:01,607 [INFO] core.mcp_client: [MCPClient:fs_docs] connected
+2026-03-17 14:09:01,797 [INFO] core.mcp_client: [MCPClient:playwright] connected
+2026-03-17 14:09:01,797 [ERROR] core.mcp_client: [MCPClientPool] failed to connect 'git': unhandled errors in a TaskGroup (1 sub-exception)

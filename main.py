@@ -9,13 +9,17 @@ Orchestrates the AutoGen hub-and-spoke multi-agent workflow:
                                   ↔  QA
 
 The ProjectManager is the central hub.  It receives the user idea, delegates
-tasks to each specialist via nested chats, and each specialist reports back
-to the PM when done.  The PM decides next steps at every stage.
+tasks to each specialist via explicit handoffs (transfer_to_* tools), and each
+specialist hands control back to the PM when done.  The PM decides next steps
+at every stage.
+
+The team uses AutoGen's Swarm pattern: agents transfer control to each other
+via HandoffMessage rather than taking turns blindly.
 
 Usage
 -----
-    python -m ai-agents-mcp-client.main "Build a REST API for a todo app"
-    python -m ai-agents-mcp-client.main "Build a REST API for a todo app" --rounds 10
+    uv run main.py "Build a REST API for a todo app"
+    uv run main.py "Build a REST API for a todo app" --rounds 10
 """
 from __future__ import annotations
 
@@ -29,7 +33,7 @@ from dotenv import load_dotenv
 
 from autogen_agentchat.agents import UserProxyAgent
 from autogen_agentchat.conditions import TextMentionTermination, MaxMessageTermination
-from autogen_agentchat.teams import RoundRobinGroupChat
+from autogen_agentchat.teams import Swarm
 
 from agents import ProjectManager, Architect, Engineer, CodeReviewer, QA
 from agents.config import ensure_workspace_dirs
@@ -107,13 +111,12 @@ async def start_sdlc(idea: str, rounds: int = 20) -> str:
             | MaxMessageTermination(max_messages=rounds)
         )
 
-        # --- Hub-and-spoke team ---
-        # RoundRobinGroupChat is used here as the backbone; the PM's system
-        # message instructs it to act as the hub and delegate to specialists.
-        # Specialists are registered and respond only when the PM addresses them.
-        team = RoundRobinGroupChat(
+        # --- Hub-and-spoke team (Swarm) ---
+        # Swarm routes control via HandoffMessage: PM uses transfer_to_* tools
+        # to delegate to specialists; each specialist transfers back to PM.
+        # The initial task is delivered to the first participant (PM).
+        team = Swarm(
             participants=[
-                # user_proxy,
                 pm.agent,
                 arch.agent,
                 eng.agent,
@@ -150,7 +153,7 @@ async def start_sdlc(idea: str, rounds: int = 20) -> str:
         return final_message
 
 
-def main(idea: str, rounds: int = 50) -> None:
+def main(idea: str, rounds: int = 100) -> None:
     """
     CLI entry point.
 
@@ -159,7 +162,7 @@ def main(idea: str, rounds: int = 50) -> None:
     idea:
         The project idea or user requirement to implement.
     rounds:
-        Maximum number of agent messages (default: 20).
+        Maximum number of agent messages (default: 100).
     """
     result = asyncio.run(start_sdlc(idea, rounds=rounds))
     print("\n=== Final result ===")

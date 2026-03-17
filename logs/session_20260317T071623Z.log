@@ -1,0 +1,187 @@
+2026-03-17 14:16:23,818 [INFO] __main__: Session log file: /Users/cerberose/Work/mas-centralize/logs/session_20260317T071623Z.log
+2026-03-17 14:16:23,819 [INFO] __main__: Opening MCP connections: ['fs_code', 'fs_docs', 'playwright', 'fs_board', 'git']
+2026-03-17 14:16:23,819 [INFO] core.mcp_client: [MCPClient:fs_code] connecting – npx ['-y', '@modelcontextprotocol/server-filesystem', '/Users/cerberose/Work/mas-centralize/data/workspace']
+2026-03-17 14:16:23,821 [INFO] core.mcp_client: [MCPClient:fs_docs] connecting – npx ['-y', '@modelcontextprotocol/server-filesystem', '/Users/cerberose/Work/mas-centralize/data/knowledge_base']
+2026-03-17 14:16:23,821 [INFO] core.mcp_client: [MCPClient:playwright] connecting – npx ['-y', '@playwright/mcp@latest']
+2026-03-17 14:16:23,821 [INFO] core.mcp_client: [MCPClient:fs_board] connecting – npx ['-y', '@modelcontextprotocol/server-filesystem', '/Users/cerberose/Work/mas-centralize/data/project_board']
+2026-03-17 14:16:23,821 [INFO] core.mcp_client: [MCPClient:git] connecting – mcp-server-git ['--repository', '/Users/cerberose/Work/mas-centralize/data/workspace']
+2026-03-17 14:16:24,270 [INFO] core.mcp_client: [MCPClient:git] connected
+2026-03-17 14:16:24,718 [INFO] core.mcp_client: [MCPClient:fs_code] connected
+2026-03-17 14:16:24,791 [INFO] core.mcp_client: [MCPClient:fs_docs] connected
+2026-03-17 14:16:24,808 [INFO] core.mcp_client: [MCPClient:fs_board] connected
+2026-03-17 14:16:24,945 [INFO] core.mcp_client: [MCPClient:playwright] connected
+2026-03-17 14:16:25,032 [INFO] __main__: Starting SDLC for: Build a CLI Todo App with JSON
+2026-03-17 14:16:25,033 [INFO] autogen_core.events: {"payload": "{\"messages\":[{\"id\":\"3fb594d1-0a7f-4410-a77b-3f8020bf7c71\",\"source\":\"user\",\"models_usage\":null,\"metadata\":{},\"created_at\":\"2026-03-17T07:16:25.032588Z\",\"content\":\"Build a CLI Todo App with JSON\",\"type\":\"TextMessage\"}],\"output_task_messages\":true}", "sender": null, "receiver": "SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e", "kind": "MessageKind.DIRECT", "delivery_stage": "DeliveryStage.SEND", "type": "Message"}
+2026-03-17 14:16:25,033 [INFO] autogen_core: Sending message of type GroupChatStart to SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e: {'messages': [TextMessage(id='3fb594d1-0a7f-4410-a77b-3f8020bf7c71', source='user', models_usage=None, metadata={}, created_at=datetime.datetime(2026, 3, 17, 7, 16, 25, 32588, tzinfo=datetime.timezone.utc), content='Build a CLI Todo App with JSON', type='TextMessage')], 'output_task_messages': True}
+2026-03-17 14:16:25,033 [INFO] autogen_core: Calling message handler for SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e with message type GroupChatStart sent by Unknown
+2026-03-17 14:16:25,033 [INFO] autogen_core.events: {"payload": "{\"messages\":[{\"id\":\"3fb594d1-0a7f-4410-a77b-3f8020bf7c71\",\"source\":\"user\",\"models_usage\":null,\"metadata\":{},\"created_at\":\"2026-03-17T07:16:25.032588Z\",\"content\":\"Build a CLI Todo App with JSON\",\"type\":\"TextMessage\"}],\"output_task_messages\":true}", "sender": null, "receiver": "SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e", "kind": "MessageKind.DIRECT", "delivery_stage": "DeliveryStage.DELIVER", "type": "Message"}
+2026-03-17 14:16:25,033 [INFO] autogen_core: Publishing message of type GroupChatStart to all subscribers: {'messages': [TextMessage(id='3fb594d1-0a7f-4410-a77b-3f8020bf7c71', source='user', models_usage=None, metadata={}, created_at=datetime.datetime(2026, 3, 17, 7, 16, 25, 32588, tzinfo=datetime.timezone.utc), content='Build a CLI Todo App with JSON', type='TextMessage')], 'output_task_messages': True}
+2026-03-17 14:16:25,033 [INFO] autogen_core.events: {"payload": "{\"messages\":[{\"id\":\"3fb594d1-0a7f-4410-a77b-3f8020bf7c71\",\"source\":\"user\",\"models_usage\":null,\"metadata\":{},\"created_at\":\"2026-03-17T07:16:25.032588Z\",\"content\":\"Build a CLI Todo App with JSON\",\"type\":\"TextMessage\"}],\"output_task_messages\":true}", "sender": "SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e", "receiver": "output_topic_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e", "kind": "MessageKind.PUBLISH", "delivery_stage": "DeliveryStage.SEND", "type": "Message"}
+2026-03-17 14:16:25,033 [INFO] autogen_core: Publishing message of type GroupChatStart to all subscribers: {'messages': [TextMessage(id='3fb594d1-0a7f-4410-a77b-3f8020bf7c71', source='user', models_usage=None, metadata={}, created_at=datetime.datetime(2026, 3, 17, 7, 16, 25, 32588, tzinfo=datetime.timezone.utc), content='Build a CLI Todo App with JSON', type='TextMessage')], 'output_task_messages': True}
+2026-03-17 14:16:25,033 [INFO] autogen_core.events: {"payload": "{\"messages\":[{\"id\":\"3fb594d1-0a7f-4410-a77b-3f8020bf7c71\",\"source\":\"user\",\"models_usage\":null,\"metadata\":{},\"created_at\":\"2026-03-17T07:16:25.032588Z\",\"content\":\"Build a CLI Todo App with JSON\",\"type\":\"TextMessage\"}],\"output_task_messages\":true}", "sender": "SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e", "receiver": "group_topic_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e", "kind": "MessageKind.PUBLISH", "delivery_stage": "DeliveryStage.SEND", "type": "Message"}
+2026-03-17 14:16:25,034 [INFO] autogen_core: Calling message handler for ProjectManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e with message type GroupChatStart published by SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e
+2026-03-17 14:16:25,034 [INFO] autogen_core.events: {"payload": "{\"messages\":[{\"id\":\"3fb594d1-0a7f-4410-a77b-3f8020bf7c71\",\"source\":\"user\",\"models_usage\":null,\"metadata\":{},\"created_at\":\"2026-03-17T07:16:25.032588Z\",\"content\":\"Build a CLI Todo App with JSON\",\"type\":\"TextMessage\"}],\"output_task_messages\":true}", "sender": "SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e", "receiver": null, "kind": "MessageKind.PUBLISH", "delivery_stage": "DeliveryStage.DELIVER", "type": "Message"}
+2026-03-17 14:16:25,034 [INFO] autogen_core: Calling message handler for Architect_da9f8dba-cdaf-4732-9df7-94e889aeff7e with message type GroupChatStart published by SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e
+2026-03-17 14:16:25,034 [INFO] autogen_core.events: {"payload": "{\"messages\":[{\"id\":\"3fb594d1-0a7f-4410-a77b-3f8020bf7c71\",\"source\":\"user\",\"models_usage\":null,\"metadata\":{},\"created_at\":\"2026-03-17T07:16:25.032588Z\",\"content\":\"Build a CLI Todo App with JSON\",\"type\":\"TextMessage\"}],\"output_task_messages\":true}", "sender": "SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e", "receiver": null, "kind": "MessageKind.PUBLISH", "delivery_stage": "DeliveryStage.DELIVER", "type": "Message"}
+2026-03-17 14:16:25,034 [INFO] autogen_core: Calling message handler for Engineer_da9f8dba-cdaf-4732-9df7-94e889aeff7e with message type GroupChatStart published by SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e
+2026-03-17 14:16:25,034 [INFO] autogen_core.events: {"payload": "{\"messages\":[{\"id\":\"3fb594d1-0a7f-4410-a77b-3f8020bf7c71\",\"source\":\"user\",\"models_usage\":null,\"metadata\":{},\"created_at\":\"2026-03-17T07:16:25.032588Z\",\"content\":\"Build a CLI Todo App with JSON\",\"type\":\"TextMessage\"}],\"output_task_messages\":true}", "sender": "SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e", "receiver": null, "kind": "MessageKind.PUBLISH", "delivery_stage": "DeliveryStage.DELIVER", "type": "Message"}
+2026-03-17 14:16:25,034 [INFO] autogen_core: Calling message handler for CodeReviewer_da9f8dba-cdaf-4732-9df7-94e889aeff7e with message type GroupChatStart published by SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e
+2026-03-17 14:16:25,034 [INFO] autogen_core.events: {"payload": "{\"messages\":[{\"id\":\"3fb594d1-0a7f-4410-a77b-3f8020bf7c71\",\"source\":\"user\",\"models_usage\":null,\"metadata\":{},\"created_at\":\"2026-03-17T07:16:25.032588Z\",\"content\":\"Build a CLI Todo App with JSON\",\"type\":\"TextMessage\"}],\"output_task_messages\":true}", "sender": "SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e", "receiver": null, "kind": "MessageKind.PUBLISH", "delivery_stage": "DeliveryStage.DELIVER", "type": "Message"}
+2026-03-17 14:16:25,034 [INFO] autogen_core: Calling message handler for QA_da9f8dba-cdaf-4732-9df7-94e889aeff7e with message type GroupChatStart published by SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e
+2026-03-17 14:16:25,034 [INFO] autogen_core.events: {"payload": "{\"messages\":[{\"id\":\"3fb594d1-0a7f-4410-a77b-3f8020bf7c71\",\"source\":\"user\",\"models_usage\":null,\"metadata\":{},\"created_at\":\"2026-03-17T07:16:25.032588Z\",\"content\":\"Build a CLI Todo App with JSON\",\"type\":\"TextMessage\"}],\"output_task_messages\":true}", "sender": "SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e", "receiver": null, "kind": "MessageKind.PUBLISH", "delivery_stage": "DeliveryStage.DELIVER", "type": "Message"}
+2026-03-17 14:16:25,034 [INFO] autogen_core: Publishing message of type GroupChatRequestPublish to all subscribers: {}
+2026-03-17 14:16:25,034 [INFO] autogen_core.events: {"payload": "{}", "sender": "SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e", "receiver": "ProjectManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e", "kind": "MessageKind.PUBLISH", "delivery_stage": "DeliveryStage.SEND", "type": "Message"}
+2026-03-17 14:16:25,034 [INFO] autogen_core.events: {"payload": "Message could not be serialized", "sender": "SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e", "receiver": null, "kind": "MessageKind.RESPOND", "delivery_stage": "DeliveryStage.SEND", "type": "Message"}
+2026-03-17 14:16:25,034 [INFO] autogen_core: Calling message handler for ProjectManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e with message type GroupChatRequestPublish published by SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e
+2026-03-17 14:16:25,034 [INFO] autogen_core.events: {"payload": "{}", "sender": "SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e", "receiver": null, "kind": "MessageKind.PUBLISH", "delivery_stage": "DeliveryStage.DELIVER", "type": "Message"}
+2026-03-17 14:16:25,125 [INFO] autogen_core: Resolving response with message type NoneType for recipient None from SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e: None
+2026-03-17 14:16:25,127 [INFO] autogen_core.events: {"payload": "Message could not be serialized", "sender": "SwarmGroupChatManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e", "receiver": null, "kind": "MessageKind.RESPOND", "delivery_stage": "DeliveryStage.DELIVER", "type": "Message"}
+2026-03-17 14:16:25,128 [INFO] __main__: [user] Build a CLI Todo App with JSON
+2026-03-17 14:16:27,296 [INFO] __main__: SDLC workflow finished.
+2026-03-17 14:16:27,299 [ERROR] autogen_core: Error processing publish message for ProjectManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e
+Traceback (most recent call last):
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/autogen_core/_single_threaded_agent_runtime.py", line 606, in _on_message
+    return await agent.on_message(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+    )
+    ^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/autogen_core/_base_agent.py", line 119, in on_message
+    return await self.on_message_impl(message, ctx)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/autogen_agentchat/teams/_group_chat/_sequential_routed_agent.py", line 67, in on_message_impl
+    return await super().on_message_impl(message, ctx)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/autogen_core/_routed_agent.py", line 485, in on_message_impl
+    return await h(self, message, ctx)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/autogen_core/_routed_agent.py", line 268, in wrapper
+    return_value = await func(self, message, ctx)  # type: ignore
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/autogen_agentchat/teams/_group_chat/_chat_agent_container.py", line 133, in handle_request
+    async for msg in self._agent.on_messages_stream(self._message_buffer, ctx.cancellation_token):
+    ...<4 lines>...
+            await self._log_message(msg)
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/autogen_agentchat/agents/_assistant_agent.py", line 953, in on_messages_stream
+    async for inference_output in self._call_llm(
+    ...<15 lines>...
+            yield inference_output
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/autogen_agentchat/agents/_assistant_agent.py", line 1109, in _call_llm
+    model_result = await model_client.create(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/autogen_ext/models/openai/_openai_client.py", line 704, in create
+    result: Union[ParsedChatCompletion[BaseModel], ChatCompletion] = await future
+                                                                     ^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/openai/resources/chat/completions/completions.py", line 2585, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+    ...<48 lines>...
+    )
+    ^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/openai/_base_client.py", line 1794, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/openai/_base_client.py", line 1529, in request
+    response = await self._client.send(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/httpcore/_async/connection.py", line 103, in handle_async_request
+    return await self._connection.handle_async_request(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/httpcore/_async/http11.py", line 136, in handle_async_request
+    raise exc
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/httpcore/_async/http11.py", line 106, in handle_async_request
+    ) = await self._receive_response_headers(**kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/httpcore/_async/http11.py", line 177, in _receive_response_headers
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/httpcore/_async/http11.py", line 217, in _receive_event
+    data = await self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.READ_NUM_BYTES, timeout=timeout
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/httpcore/_backends/anyio.py", line 35, in read
+    return await self._stream.receive(max_bytes=max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/streams/tls.py", line 244, in receive
+    data = await self._call_sslobject_method(self._ssl_object.read, max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/streams/tls.py", line 187, in _call_sslobject_method
+    data = await self.transport_stream.receive()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1269, in receive
+    await self._protocol.read_event.wait()
+  File "/opt/homebrew/anaconda3/lib/python3.13/asyncio/locks.py", line 213, in wait
+    await fut
+asyncio.exceptions.CancelledError
+2026-03-17 14:16:27,335 [INFO] autogen_core.events: {"payload": "{}", "handling_agent": "ProjectManager_da9f8dba-cdaf-4732-9df7-94e889aeff7e/da9f8dba-cdaf-4732-9df7-94e889aeff7e", "exception": "", "type": "MessageHandlerException"}
+2026-03-17 14:16:27,339 [ERROR] asyncio: unhandled exception during asyncio.run() shutdown
+task: <Task finished name='Task-30' coro=<SingleThreadedAgentRuntime._process_publish() done, defined at /Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/autogen_core/_single_threaded_agent_runtime.py:557> exception=ValueError('task_done() called too many times')>
+Traceback (most recent call last):
+  File "/opt/homebrew/anaconda3/lib/python3.13/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/opt/homebrew/anaconda3/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/opt/homebrew/anaconda3/lib/python3.13/asyncio/base_events.py", line 712, in run_until_complete
+    self.run_forever()
+    ~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/anaconda3/lib/python3.13/asyncio/base_events.py", line 683, in run_forever
+    self._run_once()
+    ~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/anaconda3/lib/python3.13/asyncio/base_events.py", line 2004, in _run_once
+    event_list = self._selector.select(timeout)
+  File "/opt/homebrew/anaconda3/lib/python3.13/selectors.py", line 548, in select
+    kev_list = self._selector.control(None, max_ev, timeout)
+  File "/opt/homebrew/anaconda3/lib/python3.13/asyncio/runners.py", line 157, in _on_sigint
+    raise KeyboardInterrupt()
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/cerberose/Work/mas-centralize/.venv/lib/python3.13/site-packages/autogen_core/_single_threaded_agent_runtime.py", line 629, in _process_publish
+    self._message_queue.task_done()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/anaconda3/lib/python3.13/asyncio/queues.py", line 237, in task_done
+    raise ValueError('task_done() called too many times')
+ValueError: task_done() called too many times

@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import inspect
+import os
 from typing import Any, Callable
 
 from core.mcp_client import MCPClientPool
@@ -196,7 +197,13 @@ CODE_WRITE_TOOLS = [
 # Git tools (mcp-server-git)
 # ---------------------------------------------------------------------------
 
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+
 async def _git_call(pool: MCPClientPool, tool: str, args: dict[str, Any]) -> str:
+    # mcp-server-git (recent versions) expects a repo_path argument for most tools.
+    # Default to this repository root so agents don't need to thread it through.
+    args.setdefault("repo_path", REPO_ROOT)
     result = await pool.call_tool("git", tool, args)
     if hasattr(result, "content"):
         blocks = result.content
@@ -267,58 +274,6 @@ GIT_WRITE_TOOLS = [
 
 
 # ---------------------------------------------------------------------------
-# Playwright / browser tools (@playwright/mcp)
-# ---------------------------------------------------------------------------
-
-async def _pw_call(pool: MCPClientPool, tool: str, args: dict[str, Any]) -> str:
-    result = await pool.call_tool("playwright", tool, args)
-    if hasattr(result, "content"):
-        blocks = result.content
-        if blocks and hasattr(blocks[0], "text"):
-            return blocks[0].text
-    return str(result)
-
-
-async def browser_navigate(pool: MCPClientPool, url: str) -> str:
-    return await _pw_call(pool, "browser_navigate", {"url": url})
-
-
-async def browser_screenshot(pool: MCPClientPool) -> str:
-    return await _pw_call(pool, "browser_screenshot", {})
-
-
-async def browser_click(pool: MCPClientPool, selector: str) -> str:
-    return await _pw_call(pool, "browser_click", {"selector": selector})
-
-
-async def browser_type(pool: MCPClientPool, selector: str, text: str) -> str:
-    return await _pw_call(pool, "browser_type", {"selector": selector, "text": text})
-
-
-async def browser_get_text(pool: MCPClientPool, selector: str) -> str:
-    return await _pw_call(pool, "browser_get_text", {"selector": selector})
-
-
-async def browser_evaluate(pool: MCPClientPool, script: str) -> str:
-    return await _pw_call(pool, "browser_evaluate", {"script": script})
-
-
-async def browser_close(pool: MCPClientPool) -> str:
-    return await _pw_call(pool, "browser_close", {})
-
-
-PLAYWRIGHT_TOOLS = [
-    browser_navigate,
-    browser_screenshot,
-    browser_click,
-    browser_type,
-    browser_get_text,
-    browser_evaluate,
-    browser_close,
-]
-
-
-# ---------------------------------------------------------------------------
 # bind_tools helper (captures MCPClientPool for AutoGen)
 # ---------------------------------------------------------------------------
 
@@ -366,7 +321,6 @@ __all__ = [
     "CODE_WRITE_TOOLS",
     "GIT_READ_TOOLS",
     "GIT_WRITE_TOOLS",
-    "PLAYWRIGHT_TOOLS",
     "bind_tools",
 ]
 

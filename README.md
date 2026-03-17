@@ -28,7 +28,7 @@ Each agent is backed by an LLM and has access to a curated set of [MCP](https://
 | **Architect** | Bob | Produces system design and architecture docs | `fs_board`, `fs_docs`, `fs_code` |
 | **Engineer** | Charlie | Implements code in the workspace, commits via git | `fs_board`, `fs_docs`, `fs_code`, `git` |
 | **CodeReviewer** | Diana | Reviews code for quality, correctness, and conventions | `fs_docs`, `fs_code`, `git` |
-| **QA** | Eve | Tests the implementation using Playwright and reports results | `fs_board`, `fs_code`, `playwright` |
+| **QA** | Eve | Tests the implementation and reports results | `fs_board`, `fs_code` |
 
 ### MCP servers
 
@@ -38,7 +38,6 @@ Each agent is backed by an LLM and has access to a curated set of [MCP](https://
 | `fs_docs` | `@modelcontextprotocol/server-filesystem` | `data/knowledge_base/` |
 | `fs_code` | `@modelcontextprotocol/server-filesystem` | `data/workspace/` |
 | `git` | `mcp-server-git` | `data/workspace/` |
-| `playwright` | `@playwright/mcp` | — |
 
 ---
 

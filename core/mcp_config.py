@@ -40,11 +40,6 @@ MCP_SERVERS: dict[str, dict] = {
         "command": "mcp-server-git",
         "args": ["--repository", CODE_PATH],
     },
-    # @playwright/mcp  (npx @playwright/mcp@latest)
-    "playwright": {
-        "command": "npx",
-        "args": ["-y", "@playwright/mcp@latest"],
-    },
 }
 
 # Convenience: which server keys each role may access.
@@ -53,5 +48,5 @@ ROLE_SERVERS: dict[str, list[str]] = {
     "architect": ["fs_board", "fs_docs", "fs_code"],
     "engineer": ["fs_board", "fs_docs", "fs_code", "git"],
     "code_reviewer": ["fs_docs", "fs_code", "git"],
-    "qa": ["fs_board", "fs_code", "playwright"],
+    "qa": ["fs_board", "fs_code"],
 }
