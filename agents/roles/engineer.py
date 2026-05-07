@@ -17,8 +17,10 @@ from core.mcp_tools import (
     DOCS_TOOLS,
     CODE_WRITE_TOOLS,
     GIT_WRITE_TOOLS,
+    SHELL_TOOLS,
     bind_tools,
 )
+from core.swebench import get_role_system_message
 
 
 _SYSTEM_MESSAGE = """\
@@ -91,10 +93,10 @@ class Engineer:
         self.agent = AssistantAgent(
             name="Engineer",
             model_client=get_model_client(),
-            tools=bind_tools(pool, *BOARD_TOOLS, *DOCS_TOOLS, *CODE_WRITE_TOOLS, *GIT_WRITE_TOOLS),
+            tools=bind_tools(pool, *BOARD_TOOLS, *DOCS_TOOLS, *CODE_WRITE_TOOLS, *GIT_WRITE_TOOLS, *SHELL_TOOLS),
             handoffs=[
                 Handoff(target="CodeReviewer", description="Hand off to the CodeReviewer when implementation is complete."),
                 Handoff(target="ProjectManager", description="Escalate to the ProjectManager only when blocked."),
             ],
-            system_message=_SYSTEM_MESSAGE,
+            system_message=get_role_system_message("engineer", _SYSTEM_MESSAGE),
         )

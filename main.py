@@ -24,7 +24,10 @@ Usage
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+import os
+import subprocess
 from datetime import datetime
 from pathlib import Path
 
@@ -39,6 +42,8 @@ from agents import ProjectManager, Architect, Engineer, CodeReviewer, QA
 from agents.config import ensure_workspace_dirs
 from core.mcp_client import MCPClientPool
 from core.mcp_config import ROLE_SERVERS
+from core.swebench import build_task_prompt, load_task_context
+from core.telemetry import record_handoff, record_message, reset as reset_telemetry, set_final_status, write_if_configured
 
 load_dotenv()
 
@@ -69,6 +74,14 @@ root_logger.addHandler(file_handler)
 
 logger = logging.getLogger(__name__)
 logger.info("Session log file: %s", log_file)
+
+
+_BLOCKED_MARKERS = (
+    "access denied",
+    "unable to create or modify",
+    "blocked",
+    "permission",
+)
 
 
 async def start_sdlc(idea: str, rounds: int = 20) -> str:
@@ -133,6 +146,13 @@ async def start_sdlc(idea: str, rounds: int = 20) -> str:
         try:
             async for message in team.run_stream(task=idea):
                 if hasattr(message, "content"):
+                    record_message(
+                        getattr(message, "source", "?"),
+                        str(getattr(message, "content", "")),
+                        getattr(message, "models_usage", None),
+                    )
+                    if "handoff" in type(message).__name__.lower() or hasattr(message, "target"):
+                        record_handoff(getattr(message, "source", "?"), getattr(message, "target", None))
                     logger.info(
                         "[%s] %s",
                         getattr(message, "source", "?"),
@@ -154,6 +174,79 @@ async def start_sdlc(idea: str, rounds: int = 20) -> str:
         return final_message
 
 
+def _write_patch_if_configured(base_commit: str | None = None) -> str | None:
+    patch_path = os.environ.get("MAS_EVAL_PATCH_PATH")
+    workspace = os.environ.get("MAS_WORKSPACE_PATH")
+    if not patch_path or not workspace:
+        return None
+    diff_cmd = ["git", "diff"]
+    if base_commit:
+        diff_cmd = ["git", "diff", f"{base_commit}..HEAD"]
+    diff = subprocess.run(
+        diff_cmd,
+        cwd=workspace,
+        capture_output=True,
+        text=True,
+        check=False,
+    ).stdout
+    if not diff:
+        diff = subprocess.run(
+            ["git", "diff"],
+            cwd=workspace,
+            capture_output=True,
+            text=True,
+            check=False,
+        ).stdout
+    Path(patch_path).write_text(diff, encoding="utf-8")
+    return patch_path
+
+
+def _derive_run_status(final_message: str, patch_path: str | None) -> tuple[str, str]:
+    normalized = final_message.lower()
+    if any(marker in normalized for marker in _BLOCKED_MARKERS):
+        return "blocked", "Workflow reported an access or blocking issue."
+    if "project complete" not in normalized:
+        return "incomplete", "Workflow ended without an explicit completion signal."
+    if not patch_path:
+        return "no_patch", "No patch artifact path was configured."
+    patch_file = Path(patch_path)
+    if not patch_file.exists() or patch_file.stat().st_size == 0:
+        return "no_patch", "No code changes were produced."
+    return "ok", ""
+
+
+def _write_result(final_message: str, patch_path: str | None, status: str, note: str) -> None:
+    result_path = os.environ.get("MAS_EVAL_RESULT_PATH")
+    if not result_path:
+        return
+    Path(result_path).write_text(
+        json.dumps(
+            {
+                "status": status,
+                "note": note,
+                "final_message": final_message,
+                "patch_path": patch_path,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+
+def run_swebench(task_path: str, rounds: int = 100) -> None:
+    os.environ["MAS_MODE"] = "swebench"
+    reset_telemetry()
+    task = load_task_context(task_path)
+    result = asyncio.run(start_sdlc(build_task_prompt(task), rounds=rounds))
+    patch_path = _write_patch_if_configured(task.get("base_commit"))
+    status, note = _derive_run_status(result, patch_path)
+    set_final_status(status)
+    _write_result(result, patch_path, status, note)
+    write_if_configured()
+    print("\n=== SWE-bench result ===")
+    print(result)
+
+
 def main(idea: str, rounds: int = 100) -> None:
     """
     CLI entry point.
@@ -171,4 +264,9 @@ def main(idea: str, rounds: int = 100) -> None:
 
 
 if __name__ == "__main__":
-    fire.Fire(main)
+    fire.Fire(
+        {
+            "main": main,
+            "run_swebench": run_swebench,
+        }
+    )

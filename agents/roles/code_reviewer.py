@@ -13,6 +13,7 @@ from autogen_agentchat.base import Handoff
 from core.autogen_config import get_model_client
 from core.mcp_client import MCPClientPool
 from core.mcp_tools import BOARD_TOOLS, DOCS_TOOLS, CODE_READ_TOOLS, GIT_READ_TOOLS, bind_tools
+from core.swebench import get_role_system_message
 
 
 _SYSTEM_MESSAGE = """\
@@ -78,5 +79,5 @@ class CodeReviewer:
                 Handoff(target="Engineer", description="Send back to the Engineer when issues need fixing."),
                 Handoff(target="ProjectManager", description="Escalate to the ProjectManager only for scope or business decisions."),
             ],
-            system_message=_SYSTEM_MESSAGE,
+            system_message=get_role_system_message("code_reviewer", _SYSTEM_MESSAGE),
         )

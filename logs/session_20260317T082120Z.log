@@ -1,0 +1,10 @@
+2026-03-17 15:21:20,966 [INFO] __main__: Session log file: /Users/cerberose/Work/mas-decentralized/logs/session_20260317T082120Z.log
+2026-03-17 15:21:20,967 [INFO] __main__: Opening MCP connections: ['fs_code', 'fs_docs', 'git', 'fs_board']
+2026-03-17 15:21:20,967 [INFO] core.mcp_client: [MCPClient:fs_code] connecting – npx ['-y', '@modelcontextprotocol/server-filesystem', '/Users/cerberose/Work/mas-decentralized/data/workspace']
+2026-03-17 15:21:20,969 [INFO] core.mcp_client: [MCPClient:fs_docs] connecting – npx ['-y', '@modelcontextprotocol/server-filesystem', '/Users/cerberose/Work/mas-decentralized/data/knowledge_base']
+2026-03-17 15:21:20,969 [INFO] core.mcp_client: [MCPClient:git] connecting – mcp-server-git ['--repository', '/Users/cerberose/Work/mas-decentralized/data/workspace']
+2026-03-17 15:21:20,969 [INFO] core.mcp_client: [MCPClient:fs_board] connecting – npx ['-y', '@modelcontextprotocol/server-filesystem', '/Users/cerberose/Work/mas-decentralized/data/project_board']
+2026-03-17 15:21:21,506 [INFO] core.mcp_client: [MCPClient:git] connected
+2026-03-17 15:21:21,829 [INFO] core.mcp_client: [MCPClient:fs_board] connected
+2026-03-17 15:21:21,872 [INFO] core.mcp_client: [MCPClient:fs_code] connected
+2026-03-17 15:21:21,912 [INFO] core.mcp_client: [MCPClient:fs_docs] connected

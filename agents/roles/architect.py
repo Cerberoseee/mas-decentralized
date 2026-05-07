@@ -13,6 +13,7 @@ from autogen_agentchat.base import Handoff
 from core.autogen_config import get_model_client
 from core.mcp_client import MCPClientPool
 from core.mcp_tools import BOARD_TOOLS, DOCS_TOOLS, CODE_READ_TOOLS, bind_tools
+from core.swebench import get_role_system_message
 
 
 _SYSTEM_MESSAGE = """\
@@ -79,5 +80,5 @@ class Architect:
                 Handoff(target="Engineer", description="Hand off to the Engineer when design is complete."),
                 Handoff(target="ProjectManager", description="Escalate to the ProjectManager only when blocked."),
             ],
-            system_message=_SYSTEM_MESSAGE,
+            system_message=get_role_system_message("architect", _SYSTEM_MESSAGE),
         )
