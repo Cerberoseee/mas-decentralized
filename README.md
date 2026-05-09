@@ -42,9 +42,23 @@ Each agent is backed by an LLM and has access to a curated set of [MCP](https://
 |---|---|---|---|
 | **ProjectManager** | Alice | Breaks down ideas into tickets, kicks off the workflow, writes the final summary | `fs_board`, `fs_docs` |
 | **Architect** | Bob | Produces system design and architecture docs, hands off directly to Engineer | `fs_board`, `fs_docs`, `fs_code` |
-| **Engineer** | Charlie | Implements code in the workspace, commits via git, hands off directly to CodeReviewer | `fs_board`, `fs_docs`, `fs_code`, `git` |
+| **Engineer** | Charlie | **Implemented by [`mini-swe-agent`](https://mini-swe-agent.com/)** — runs a fresh bash-driven coding loop inside the workspace, commits, then hands off to CodeReviewer | `fs_board`, `fs_docs`, `fs_code`, `git` (via `mcp_call`) |
 | **CodeReviewer** | Dave | Reviews code; routes to QA (approved) or back to Engineer (issues) | `fs_board`, `fs_docs`, `fs_code`, `git` |
 | **QA** | Eve | Tests the implementation; routes back to Engineer (bugs) or to PM (all clear) | `fs_board`, `fs_code` |
+
+> The Engineer is not an AutoGen `AssistantAgent` with direct tool calling. A
+> Swarm handoff to `Engineer` starts a [`mini-swe-agent`](https://mini-swe-agent.com/)
+> `DefaultAgent` inside `data/workspace/`. The mini-agent can run normal bash
+> commands and can also call the existing scoped MCP servers with:
+>
+> ```bash
+> mcp_call <server> <tool> '<JSON_ARGS>'
+> ```
+>
+> By default, successful Engineer turns emit a `HandoffMessage` to
+> `CodeReviewer`. If the mini-agent is blocked, it can start its final
+> submission with `ESCALATE_TO_PROJECT_MANAGER` to escalate instead. Full
+> trajectories are written to `logs/mini_traj_<run-id>_turn<NN>.json`.
 
 ### Handoff graph
 
@@ -85,7 +99,7 @@ mas-decentralized/
 │   └── roles/
 │       ├── project_manager.py
 │       ├── architect.py
-│       ├── engineer.py
+│       ├── engineer.py      # mini-swe-agent backed (BaseChatAgent + MCPLocalEnvironment)
 │       ├── code_reviewer.py
 │       └── qa.py
 ├── core/
@@ -140,6 +154,21 @@ AUTOGEN_MODEL=gpt-4o
 
 # LLM temperature (default: 0.1)
 AUTOGEN_TEMPERATURE=0.1
+
+# Optional: model used by the Engineer's mini-swe-agent worker.
+# Defaults to AUTOGEN_MODEL. Must be a LiteLLM-compatible name
+# (e.g. "gpt-4o", "openai/gpt-4o", "anthropic/claude-sonnet-4-5-20250929").
+# MINI_AGENT_MODEL=gpt-4o
+
+# Optional: cost ceiling per mini-swe-agent run, in USD (default: 3.0).
+# MINI_AGENT_COST_LIMIT=3.0
+
+# Optional: hard step ceiling per mini-swe-agent run (default: 0 = unlimited).
+# MINI_AGENT_STEP_LIMIT=0
+
+# Optional: timeout (seconds) for a single mcp_call from inside mini-swe-agent
+# (default: 120).
+# MINI_AGENT_MCP_TIMEOUT=120
 ```
 
 **3. Initialise the workspace git repo** (first run only, **required for git MCP tools**)
@@ -177,6 +206,7 @@ The workflow stops automatically when the ProjectManager outputs `PROJECT COMPLE
 
 - **Terminal** — live log of every agent message
 - **`logs/session_<timestamp>.log`** — full session log persisted to disk
+- **`logs/mini_traj_<run-id>_turn<NN>.json`** — full mini-swe-agent trajectory for each Engineer turn
 - **`data/workspace/`** — all generated source code, committed to git
 - **`data/project_board/`** — Kanban tickets tracking the work
 - **`data/knowledge_base/`** — architecture and design documents
