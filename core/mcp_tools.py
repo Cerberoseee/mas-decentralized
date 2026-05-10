@@ -235,24 +235,40 @@ def _run_workspace_command_in_docker(
 
     When ``use_docker=true`` the host workspace_dir is an empty marker — the
     repo lives only inside the container at ``/testbed``.  This helper spins up
-    a one-shot container from the same per-instance image, applies the
-    engineer's ``patch.diff`` (if it already exists), and then runs the
-    requested command so QA sees the fixed code.
+    a one-shot container from the same per-instance image, applies (in order):
+
+    1. The dataset's gold ``test_patch.diff`` (so fail_to_pass / pass_to_pass
+       test IDs actually exist — mirrors the official SWE-bench harness).
+    2. The engineer's ``patch.diff`` (the candidate fix, if produced yet).
+
+    Then runs the requested QA command so it sees the fixed implementation
+    against the gold test cases.
     """
     run_dir = os.environ.get("MAS_EVAL_RUN_DIR", "").strip()
     patch_path = os.environ.get("MAS_EVAL_PATCH_PATH", "").strip()
+    test_patch_path = os.environ.get("MAS_EVAL_TEST_PATCH_PATH", "").strip()
 
     patch_available = bool(run_dir and patch_path and os.path.isfile(patch_path))
+    test_patch_available = bool(
+        run_dir and test_patch_path and os.path.isfile(test_patch_path)
+    )
+    mount_run_dir = patch_available or test_patch_available
 
-    # Optionally apply the engineer's patch before running the command.
     script_parts: list[str] = []
+    if test_patch_available:
+        # Gold tests first so engineer-side hunks layered on top still resolve.
+        script_parts.append(
+            "git apply --whitespace=nowarn /run_dir/test_patch.diff 2>/dev/null || true"
+        )
     if patch_available:
-        script_parts.append("git apply /run_dir/patch.diff 2>/dev/null || true")
+        script_parts.append(
+            "git apply --whitespace=nowarn /run_dir/patch.diff 2>/dev/null || true"
+        )
     script_parts.append(shlex.join(parts))
     script = " && ".join(script_parts)
 
     docker_cmd = ["docker", "run", "--rm", "--workdir", "/testbed"]
-    if patch_available:
+    if mount_run_dir:
         docker_cmd += ["-v", f"{run_dir}:/run_dir:ro"]
     docker_cmd += [image, "bash", "-lc", script]
 

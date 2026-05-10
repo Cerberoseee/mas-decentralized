@@ -17,9 +17,9 @@ so the conda env inside the container is auto-activated — no host-side venv,
 no C compilation, no PEP 668.  ``mcp_call`` lines are still dispatched to the
 host-side ``MCPClientPool`` as before.
 
-Receives implementation tasks from the ProjectManager, writes or refactors
-code in the workspace, commits via git, and hands off to CodeReviewer.
-SWE-bench runs emit ``patch.diff`` from
+Receives implementation tasks from the ProjectManager (guided by the
+Architect's design), writes or refactors code in the workspace, commits
+via git, and reports back. SWE-bench runs emit ``patch.diff`` from
 ``main._write_patch_if_configured`` after the workflow.
 """
 from __future__ import annotations
@@ -33,6 +33,7 @@ import shlex
 import subprocess
 import time
 import traceback
+from collections import deque
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Sequence
@@ -68,12 +69,12 @@ from minisweagent import package_dir  # noqa: E402
 from minisweagent.agents.default import DefaultAgent  # noqa: E402
 from minisweagent.environments.docker import DockerEnvironment  # noqa: E402
 from minisweagent.environments.local import LocalEnvironment  # noqa: E402
+from minisweagent.exceptions import LimitsExceeded  # noqa: E402
 from minisweagent.models.litellm_model import LitellmModel  # noqa: E402
 
 
 _DEFAULT_CONFIG_PATH = Path(package_dir) / "config" / "default.yaml"
 _DEFAULT_CONFIG_CACHE: dict[str, Any] | None = None
-_ESCALATION_MARKER = "ESCALATE_TO_PROJECT_MANAGER"
 
 
 def _load_default_config() -> dict[str, Any]:
@@ -87,12 +88,15 @@ def _load_default_config() -> dict[str, Any]:
 
 
 def _resolve_model_name() -> str:
-    """LiteLLM-compatible model name for the inner mini-swe-agent."""
-    return (
-        os.environ.get("MINI_AGENT_MODEL")
-        or os.environ.get("AUTOGEN_MODEL")
-        or "gpt-4o"
-    )
+    """LiteLLM-compatible model name for the inner mini-swe-agent.
+
+    Priority: explicit per-process ``MINI_AGENT_MODEL`` override, then the
+    centralized helper (``AUTOGEN_MODEL`` → ``MAS_EVAL_BASE_MODEL`` →
+    ``"gpt-4o"``), so the same study.toml ``base_model`` flows through.
+    """
+    from core.autogen_config import resolve_base_model_name
+
+    return os.environ.get("MINI_AGENT_MODEL") or resolve_base_model_name()
 
 
 def _resolve_cost_limit() -> float:
@@ -128,24 +132,60 @@ def _resolve_mcp_timeout() -> float:
         return 120.0
 
 
+def _resolve_guard_max_repeat() -> int:
+    """Trip the loop guard when the same command runs N times in a row.
+
+    Override with ``MINI_AGENT_GUARD_MAX_REPEAT`` (default: 4).
+    """
+    raw = os.environ.get("MINI_AGENT_GUARD_MAX_REPEAT")
+    if raw is None:
+        return 4
+    try:
+        val = int(raw)
+        if val < 2:
+            raise ValueError("must be >= 2")
+        return val
+    except ValueError:
+        logger.warning("Invalid MINI_AGENT_GUARD_MAX_REPEAT=%r, using 4", raw)
+        return 4
+
+
+def _resolve_guard_max_failures() -> int:
+    """Trip the loop guard after N consecutive non-zero exits with no success.
+
+    Override with ``MINI_AGENT_GUARD_MAX_FAILS`` (default: 12).
+    """
+    raw = os.environ.get("MINI_AGENT_GUARD_MAX_FAILS")
+    if raw is None:
+        return 12
+    try:
+        val = int(raw)
+        if val < 2:
+            raise ValueError("must be >= 2")
+        return val
+    except ValueError:
+        logger.warning("Invalid MINI_AGENT_GUARD_MAX_FAILS=%r, using 12", raw)
+        return 12
+
+
 def _resolve_max_engineer_turns() -> int:
     """Maximum number of Engineer turns before a hard stop is issued.
 
     Prevents destructive loops where the model repeatedly overwrites source
     files with stubs or otherwise makes things worse across many re-invocations.
-    Override with ``MINI_AGENT_MAX_ENGINEER_TURNS`` (default: 5).
+    Override with ``MINI_AGENT_MAX_ENGINEER_TURNS`` (default: 3).
     """
     raw = os.environ.get("MINI_AGENT_MAX_ENGINEER_TURNS")
     if raw is None:
-        return 5
+        return 3
     try:
         val = int(raw)
         if val < 1:
             raise ValueError("must be >= 1")
         return val
     except ValueError:
-        logger.warning("Invalid MINI_AGENT_MAX_ENGINEER_TURNS=%r, using 5", raw)
-        return 5
+        logger.warning("Invalid MINI_AGENT_MAX_ENGINEER_TURNS=%r, using 3", raw)
+        return 3
 
 
 def _resolve_mini_cmd_timeout(env_cfg: dict[str, Any]) -> None:
@@ -338,23 +378,64 @@ Execute work by calling the **`bash` tool** each turn (see system message). Opti
 
 ## Useful patterns (inside the `command` string)
 
-### Create / overwrite a file
+### What you do and do NOT edit
 
-Use heredoc or your platform's file redirection inside the `command` value.
+- You edit IMPLEMENTATION code only (e.g. `/testbed/<package>/<module>.py`).
+- You do NOT edit anything under `tests/` or matching `test_*.py`, and you do
+  NOT edit any `conftest.py`. The dataset's gold tests are pre-applied to the
+  container by the harness; the test IDs you need ALREADY EXIST. If a
+  Fail-to-pass ID is missing, escalate — do not write tests yourself.
 
-### Edit with sed
+### Editing IMPLEMENTATION `.py` files (canonical safe pattern)
+
+The repository lives **inside the Docker container at `/testbed`**. Host-side
+`fs_code` MCP cannot see container paths, so use this **read-modify-write
+Python heredoc** for any non-trivial change:
+
+    python - <<'PY'
+    import pathlib
+    p = pathlib.Path("/testbed/<package>/<module>.py")
+    src = p.read_text()
+    new = src.replace("OLD_BLOCK", "NEW_BLOCK")
+    assert new != src, "edit pattern did not match — abort"
+    p.write_text(new)
+    PY
+
+The assert fails BEFORE any `write_text` call if `OLD_BLOCK` does not match,
+so the file is preserved on a missed pattern.
+
+### Forbidden patterns (have repeatedly destroyed files)
+
+- `cat > /testbed/.../file.py <<EOF ...` — truncates the entire file first.
+- `echo "..." > /testbed/.../file.py`     — same.
+- `... >> /testbed/.../file.py`           — appends raw text outside any block.
+- `sed -i '1i\\...' /testbed/.../file.py` — prepends at line 1, scrambles
+  import order, cascading NameErrors.
+- `sed -i '$a...' /testbed/.../file.py`   — appends after the last line, same.
+
+### Read-only viewing (fine in bash)
+
+`nl -ba path/to/file.py | sed -n '10,30p'`, `head`, `tail`, `grep -n`.
+
+### `mcp_call fs_code` — only when NOT running the Docker arm
+
+When the workspace is on the host (no SWE-bench container), `fs_code` is
+rooted at `MAS_WORKSPACE_PATH` and you may use it:
+
+    mcp_call fs_code read_file '{"path":"<host-path>/file.py"}'
+    mcp_call fs_code write_file '{"path":"<host-path>/file.py","content":"..."}'
+
+In Docker mode `fs_code` cannot reach `/testbed`; use the bash heredoc above.
+
+### Last-resort tiny substitution (implementation files only)
+
+For a single-line, single-occurrence substring fix that you have verified
+with `grep -c`, you may use `sed -i 's/OLD/NEW/' /testbed/.../file.py` ONCE.
+Never use `sed` to insert or append blocks.
 
 {% if system == "Darwin" %}
-<important>
-You are on macOS: use `sed -i ''` for in-place edits.
-</important>
+On macOS, use `sed -i '' 's/OLD/NEW/g' ...` for in-place edits.
 {% endif %}
-
-Example: `sed -i 's/old/new/g' path/to/file.py` (on Linux/Git Bash). On macOS use `sed -i '' 's/old/new/g' ...`.
-
-### View part of a file
-
-Example: `nl -ba path/to/file.py | sed -n '10,30p'`
 """
 
 
@@ -371,6 +452,124 @@ def _apply_litellm_tool_templates(agent_cfg: dict[str, Any], model_cfg: dict[str
 # ---------------------------------------------------------------------------
 # MCP-aware environment
 # ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# Loop guard
+# ---------------------------------------------------------------------------
+
+
+class _LoopGuard:
+    """Detects unproductive spirals inside a single mini-swe-agent run.
+
+    Two heuristics, either of which trips the guard:
+
+    1. **Repeated identical command** — the same exact bash/mcp_call command
+       string is issued ``max_repeated_command`` times in a row. This catches
+       the classic "re-run the same failing pytest" or "re-issue the same
+       broken sed" loop where the model never adapts.
+    2. **No-success streak** — ``max_consecutive_failures`` non-zero return
+       codes in a row without a single success. This catches multi-strategy
+       spirals where the command keeps changing but nothing ever works.
+
+    Either limit is configurable via env vars, see ``_resolve_guard_max_*``
+    in this module. When tripped, the host env's ``execute()`` raises a
+    ``LimitsExceeded`` so ``DefaultAgent.run()`` exits cleanly, surfacing
+    a "LoopGuard" exit_status to the wrapping ``_MiniEngineerAgent``.
+    """
+
+    def __init__(
+        self,
+        *,
+        max_repeated_command: int,
+        max_consecutive_failures: int,
+        owner_label: str = "engineer",
+    ) -> None:
+        if max_repeated_command < 2:
+            raise ValueError("max_repeated_command must be >= 2")
+        if max_consecutive_failures < 2:
+            raise ValueError("max_consecutive_failures must be >= 2")
+        self._max_repeat = max_repeated_command
+        self._max_fails = max_consecutive_failures
+        self._owner = owner_label
+        self._recent: deque[str] = deque(maxlen=max_repeated_command)
+        self._consecutive_failures = 0
+        self._tripped_reason: str | None = None
+
+    @property
+    def tripped(self) -> bool:
+        return self._tripped_reason is not None
+
+    @property
+    def reason(self) -> str:
+        return self._tripped_reason or ""
+
+    def observe(self, command: str, returncode: int) -> None:
+        """Record a single executed command. Sets ``tripped`` when a limit fires."""
+        if self._tripped_reason is not None:
+            return
+
+        normalized = " ".join(command.split())
+        self._recent.append(normalized)
+
+        if (
+            len(self._recent) == self._max_repeat
+            and normalized
+            and len(set(self._recent)) == 1
+        ):
+            preview = normalized if len(normalized) <= 200 else normalized[:200] + "…"
+            self._tripped_reason = (
+                f"same command issued {self._max_repeat} times in a row "
+                f"with no adaptation: `{preview}`"
+            )
+            logger.warning("[%s] LoopGuard tripped (repeat): %s", self._owner, preview)
+            return
+
+        if returncode != 0:
+            self._consecutive_failures += 1
+            if self._consecutive_failures >= self._max_fails:
+                self._tripped_reason = (
+                    f"{self._max_fails} consecutive non-zero exit codes with no "
+                    "successful command — work appears stuck"
+                )
+                logger.warning(
+                    "[%s] LoopGuard tripped (no-success streak of %d)",
+                    self._owner,
+                    self._max_fails,
+                )
+        else:
+            self._consecutive_failures = 0
+
+    def raise_if_tripped(self) -> None:
+        """Raise ``LimitsExceeded`` with an exit message if the guard tripped.
+
+        ``DefaultAgent.run()`` catches ``InterruptAgentFlow`` (parent of
+        ``LimitsExceeded``) and breaks its loop when the appended message has
+        ``role == "exit"`` — so wrapping the abort in this exception is the
+        correct way to terminate the agent cleanly from inside the env.
+        """
+        if not self._tripped_reason:
+            return
+        content = (
+            f"LoopGuard: {self._tripped_reason}. "
+            "Aborting this engineer turn so the ProjectManager can re-route. "
+            "If a fix really requires more iterations, raise "
+            "MINI_AGENT_GUARD_MAX_REPEAT / MINI_AGENT_GUARD_MAX_FAILS or "
+            "switch to a stronger base_model."
+        )
+        raise LimitsExceeded(
+            {
+                "role": "exit",
+                "content": content,
+                "extra": {
+                    "exit_status": "LoopGuard",
+                    # Surface the reason via `submission` so it bubbles up to the
+                    # PM's summary, since `_format_summary` keys off submission.
+                    "submission": content,
+                    "loop_guard_reason": self._tripped_reason,
+                },
+            }
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -507,14 +706,28 @@ class MCPLocalEnvironment(_MCPDispatchMixin, LocalEnvironment):
             else tuple(ROLE_SERVERS.get("engineer", []))
         )
         self._mcp_timeout = mcp_timeout
+        self._loop_guard = _LoopGuard(
+            max_repeated_command=_resolve_guard_max_repeat(),
+            max_consecutive_failures=_resolve_guard_max_failures(),
+            owner_label="Engineer/local",
+        )
 
     # The base class signature in mini-swe-agent v2 is:
     #   execute(self, action, cwd="", *, timeout=None) -> dict
     def execute(self, action: dict, cwd: str = "", *, timeout: int | None = None) -> dict[str, Any]:
+        # Surface a previously-tripped guard before doing anything else, so a
+        # late-arriving step from the model can't sneak past the abort.
+        self._loop_guard.raise_if_tripped()
+
         command = (action.get("command") or "").lstrip()
         if command.startswith("mcp_call"):
-            return self._handle_mcp_call(command)
-        return self._execute_shell_like_local_env(action, cwd, timeout=timeout)
+            result = self._handle_mcp_call(command)
+        else:
+            result = self._execute_shell_like_local_env(action, cwd, timeout=timeout)
+
+        self._loop_guard.observe(command, int(result.get("returncode", -1)))
+        self._loop_guard.raise_if_tripped()
+        return result
 
     def _execute_shell_like_local_env(
         self, action: dict, cwd: str = "", *, timeout: int | None = None
@@ -597,13 +810,25 @@ class MCPDockerEnvironment(_MCPDispatchMixin, DockerEnvironment):
             else tuple(ROLE_SERVERS.get("engineer", []))
         )
         self._mcp_timeout = mcp_timeout
+        self._loop_guard = _LoopGuard(
+            max_repeated_command=_resolve_guard_max_repeat(),
+            max_consecutive_failures=_resolve_guard_max_failures(),
+            owner_label="Engineer/docker",
+        )
 
     def execute(self, action: dict, cwd: str = "", *, timeout: int | None = None) -> dict[str, Any]:
+        self._loop_guard.raise_if_tripped()
+
         command = (action.get("command") or "").lstrip()
         if command.startswith("mcp_call"):
-            return self._handle_mcp_call(command)
-        # Route to DockerEnvironment.execute → docker exec … bash -lc
-        return DockerEnvironment.execute(self, action, cwd, timeout=timeout)
+            result = self._handle_mcp_call(command)
+        else:
+            # Route to DockerEnvironment.execute → docker exec … bash -lc
+            result = DockerEnvironment.execute(self, action, cwd, timeout=timeout)
+
+        self._loop_guard.observe(command, int(result.get("returncode", -1)))
+        self._loop_guard.raise_if_tripped()
+        return result
 
 
 # ---------------------------------------------------------------------------
@@ -613,9 +838,9 @@ class MCPDockerEnvironment(_MCPDispatchMixin, DockerEnvironment):
 
 _DEFAULT_BRIEFING = """\
 You are Charlie, the Software Engineer for a multi-agent SDLC team. The
-Project Manager (Alice) has already produced tickets and any design docs.
-Your job is to make the code in the workspace satisfy what they asked for,
-then commit and hand off to CodeReviewer.
+Project Manager (Alice) and Architect (Bob) have already produced
+tickets and design docs. Your job is to make the code in the workspace
+satisfy what they asked for, then commit.
 
 Operating rules:
 - Treat the workspace (your cwd) as the project root. Do NOT modify
@@ -627,8 +852,6 @@ Operating rules:
   before writing code. Update each ticket's Status field and append a
   brief Update note as your work progresses.
 - Commit your changes via git when they are ready for review.
-- If you are genuinely blocked, start your final submission with
-  ESCALATE_TO_PROJECT_MANAGER.
 """
 
 
@@ -716,7 +939,7 @@ class _MiniEngineerAgent(BaseChatAgent):
     DEFAULT_DESCRIPTION = (
         "Charlie, the Software Engineer. Backed by mini-swe-agent: "
         "delegates each task to a fresh bash-driven agent loop with MCP "
-        "tool access, then hands control to CodeReviewer (or ProjectManager on escalation)."
+        "tool access, then hands control back to the ProjectManager."
     )
 
     def __init__(
@@ -725,13 +948,11 @@ class _MiniEngineerAgent(BaseChatAgent):
         pool: MCPClientPool,
         name: str = "Engineer",
         description: str | None = None,
-        handoff_target: str = "CodeReviewer",
-        escalation_target: str = "ProjectManager",
+        handoff_target: str = "ProjectManager",
     ) -> None:
         super().__init__(name=name, description=description or self.DEFAULT_DESCRIPTION)
         self._pool = pool
         self._handoff_target = handoff_target
-        self._escalation_target = escalation_target
         self._turn_counter = itertools.count(1)
 
     @property
@@ -764,7 +985,7 @@ class _MiniEngineerAgent(BaseChatAgent):
             return Response(
                 chat_message=HandoffMessage(
                     source=self.name,
-                    target=self._escalation_target,
+                    target=self._handoff_target,
                     content=content,
                 )
             )
@@ -787,17 +1008,16 @@ class _MiniEngineerAgent(BaseChatAgent):
             )
             handoff = HandoffMessage(
                 source=self.name,
-                target=self._escalation_target,
+                target=self._handoff_target,
                 content=content,
             )
             return Response(chat_message=handoff)
 
         elapsed = time.monotonic() - started
-        target, result = self._choose_handoff_target(result)
-        content = self._format_summary(turn, elapsed, result, target)
+        content = self._format_summary(turn, elapsed, result)
         handoff = HandoffMessage(
             source=self.name,
-            target=target,
+            target=self._handoff_target,
             content=content,
         )
         return Response(chat_message=handoff)
@@ -805,16 +1025,6 @@ class _MiniEngineerAgent(BaseChatAgent):
     async def on_reset(self, cancellation_token: CancellationToken) -> None:
         del cancellation_token
         self._turn_counter = itertools.count(1)
-
-    def _choose_handoff_target(self, result: dict[str, Any]) -> tuple[str, dict[str, Any]]:
-        cleaned = dict(result)
-        submission = (cleaned.get("submission") or "").strip()
-        if result.get("exit_status") != "Submitted" or "error" in result:
-            return self._escalation_target, cleaned
-        if submission.startswith(_ESCALATION_MARKER):
-            cleaned["submission"] = submission.removeprefix(_ESCALATION_MARKER).lstrip(" :\n\t")
-            return self._escalation_target, cleaned
-        return self._handoff_target, cleaned
 
     # ------------------------------------------------------------------
     # mini-swe-agent driver
@@ -918,6 +1128,14 @@ class _MiniEngineerAgent(BaseChatAgent):
             }
             if "timeout" in env_cfg:
                 docker_kwargs["timeout"] = env_cfg["timeout"]
+
+            # Mount run_dir so the gold test_patch (and the engineer's own
+            # patch.diff later, if ever needed inside the container) are
+            # readable at /run_dir. Read-only is sufficient for git apply.
+            host_run_dir = os.environ.get("MAS_EVAL_RUN_DIR", "").strip()
+            if host_run_dir and os.path.isdir(host_run_dir):
+                docker_kwargs["run_args"] = ["--rm", "-v", f"{host_run_dir}:/run_dir:ro"]
+
             env: MCPLocalEnvironment | MCPDockerEnvironment = MCPDockerEnvironment(
                 pool=self._pool,
                 parent_loop=parent_loop,
@@ -944,11 +1162,41 @@ class _MiniEngineerAgent(BaseChatAgent):
         model = LitellmModel(model_name=model_name, **model_cfg)
         inner = DefaultAgent(model, env, **agent_cfg)
 
-        # Record the container's HEAD *before* the agent runs so that the
-        # patch diff only covers the agent's own changes, not any commits that
-        # the SWE-bench image may have added on top of base_commit during build.
+        # Apply the gold test_patch INSIDE the container before the agent runs,
+        # then commit it so `initial_head` advances past it. Mirrors the
+        # official SWE-bench harness: the dataset's test cases exist from the
+        # start, so the engineer only needs to fix the implementation.
+        # Recording `initial_head` AFTER the commit guarantees the engineer's
+        # later `git diff initial_head` never leaks the test_patch hunks.
         initial_head: str | None = None
         if isinstance(env, MCPDockerEnvironment):
+            test_patch_path = os.environ.get("MAS_EVAL_TEST_PATCH_PATH", "").strip()
+            if test_patch_path:
+                apply_cmd = (
+                    "if [ -f /run_dir/test_patch.diff ]; then "
+                    "git -c user.email=mas@local -c user.name=mas "
+                    "apply --whitespace=nowarn /run_dir/test_patch.diff "
+                    "&& git -c user.email=mas@local -c user.name=mas add -A "
+                    "&& git -c user.email=mas@local -c user.name=mas "
+                    "commit -m 'mas: gold test_patch (auto-applied)' --no-verify; "
+                    "fi"
+                )
+                apply_result = subprocess.run(
+                    ["docker", "exec", env.container_id, "bash", "-lc", apply_cmd],
+                    capture_output=True, text=True, timeout=30, check=False,
+                )
+                if apply_result.returncode == 0:
+                    logger.info(
+                        "[Engineer/mini] Applied + committed gold test_patch in container %s",
+                        env.container_id[:12],
+                    )
+                else:
+                    logger.warning(
+                        "[Engineer/mini] git apply/commit test_patch failed (rc=%d): %s",
+                        apply_result.returncode,
+                        (apply_result.stderr or apply_result.stdout)[:300],
+                    )
+
             head_result = subprocess.run(
                 ["docker", "exec", env.container_id, "git", "rev-parse", "HEAD"],
                 capture_output=True, text=True, timeout=15, check=False,
@@ -998,16 +1246,22 @@ class _MiniEngineerAgent(BaseChatAgent):
         return logs_dir / f"mini_traj_{suffix}_turn{turn:02d}.json"
 
     @staticmethod
-    def _format_summary(turn: int, elapsed: float, result: dict[str, Any], target: str) -> str:
+    def _format_summary(turn: int, elapsed: float, result: dict[str, Any]) -> str:
         submission = (result.get("submission") or "").strip()
         if len(submission) > 4000:
             submission = submission[:4000] + "\n... [truncated; see trajectory]"
 
-        success = result.get("exit_status") == "Submitted" and "error" not in result
-        status = "succeeded" if success else "did not submit cleanly"
+        exit_status = result.get("exit_status", "")
+        success = exit_status == "Submitted"
+        if exit_status == "LoopGuard":
+            status = "ABORTED by loop guard"
+        elif success:
+            status = "succeeded"
+        else:
+            status = "did not submit cleanly"
 
         lines = [
-            f"Engineer (mini-swe-agent) {status} on turn {turn}; handoff target={target}.",
+            f"Engineer (mini-swe-agent) {status} on turn {turn}.",
             (
                 f"exit_status={result.get('exit_status', '?')} "
                 f"steps={result.get('n_calls', 0)} "
