@@ -47,7 +47,6 @@ MCP_SERVERS: dict[str, dict] = {
 # Convenience: which server keys each role may access.
 ROLE_SERVERS: dict[str, list[str]] = {
     "project_manager": ["fs_board", "fs_docs"],
-    "architect": ["fs_board", "fs_docs", "fs_code"],
     "engineer": ["fs_board", "fs_docs", "fs_code", "git"],
     "code_reviewer": ["fs_docs", "fs_code", "git"],
     "qa": ["fs_board", "fs_code"],

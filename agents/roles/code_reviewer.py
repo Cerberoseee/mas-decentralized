@@ -3,16 +3,19 @@ Code Reviewer agent.
 
 Receives implementation from the Engineer, inspects the code and diffs,
 then either sends it back to the Engineer (issues found) or forwards it
-directly to QA (approved) — without returning through the PM.
+directly to QA (approved) — without returning through the PM unless
+a scope/business decision is needed.
 """
 from __future__ import annotations
+
+import os
 
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.base import Handoff
 
 from core.autogen_config import get_model_client
 from core.mcp_client import MCPClientPool
-from core.mcp_tools import BOARD_TOOLS, DOCS_TOOLS, CODE_READ_TOOLS, GIT_READ_TOOLS, bind_tools
+from core.mcp_tools import BOARD_TOOLS, DOCS_TOOLS, CODE_READ_TOOLS, GIT_READ_TOOLS, PATCH_TOOLS, bind_tools
 from core.swebench import get_role_system_message
 
 
@@ -58,6 +61,7 @@ that requires a business or scope decision you cannot resolve.
 - git_*         : inspect diffs, commits, and branch state.
 
 ## Rules
+- Chain of Thought: Before executing any tool call or handoff, you MUST output your internal reasoning explicitly (e.g., "Thought: First I need to review the diffs..."). Think step-by-step.
 - Never attempt to read or write paths outside these data/ directories.
 - Do NOT modify any code files.
 - Route to transfer_to_QA or transfer_to_Engineer based on review outcome;
@@ -65,15 +69,27 @@ that requires a business or scope decision you cannot resolve.
 """
 
 
+def _is_docker_mode() -> bool:
+    return os.environ.get("MINI_AGENT_USE_DOCKER", "").strip().lower() in ("1", "true", "yes")
+
+
 class CodeReviewer:
     """Constructs an AutoGen AssistantAgent configured for the Code Reviewer role."""
 
     def __init__(self, pool: MCPClientPool) -> None:
         self._pool = pool
+        # In Docker mode the git MCP server is not in the pool (the repo lives
+        # inside the container, not on the host), and CODE_READ_TOOLS point at
+        # an empty host workspace.  Use read_patch_diff instead so the reviewer
+        # can still inspect what the Engineer actually changed.
+        if _is_docker_mode():
+            review_tools = [*BOARD_TOOLS, *DOCS_TOOLS, *PATCH_TOOLS]
+        else:
+            review_tools = [*BOARD_TOOLS, *DOCS_TOOLS, *CODE_READ_TOOLS, *GIT_READ_TOOLS]
         self.agent = AssistantAgent(
             name="CodeReviewer",
             model_client=get_model_client(),
-            tools=bind_tools(pool, *BOARD_TOOLS, *DOCS_TOOLS, *CODE_READ_TOOLS, *GIT_READ_TOOLS),
+            tools=bind_tools(pool, *review_tools),
             handoffs=[
                 Handoff(target="QA", description="Forward to QA when the implementation is approved."),
                 Handoff(target="Engineer", description="Send back to the Engineer when issues need fixing."),

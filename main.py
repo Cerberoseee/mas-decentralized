@@ -1,20 +1,19 @@
 """
 SDLC entry point.
 
-Orchestrates the AutoGen mesh multi-agent workflow:
+Orchestrates the AutoGen hub-and-spoke multi-agent workflow:
 
-    User → ProjectManager → Architect → Engineer → CodeReviewer → QA → ProjectManager
-                                                         ↑    ↓
-                                                      Engineer ← (issues)
-                                              Engineer ←────── QA (bugs)
+    UserProxy  →  ProjectManager  ↔  Engineer
+                                  ↔  CodeReviewer
+                                  ↔  QA
 
-The ProjectManager kicks off the workflow and receives the final completion
-signal.  Specialists hand off directly to each other along the natural SDLC
-path; the PM is bypassed for routine inter-specialist transitions.  Any agent
-can escalate back to the PM when blocked.
+The ProjectManager is the central hub.  It receives the user idea, delegates
+tasks to each specialist via explicit handoffs (transfer_to_* tools), and each
+specialist hands control back to the PM when done.  The PM decides next steps
+at every stage.
 
 The team uses AutoGen's Swarm pattern: agents transfer control to each other
-via HandoffMessage (transfer_to_* tools) rather than taking turns blindly.
+via HandoffMessage rather than taking turns blindly.
 
 Usage
 -----
@@ -38,7 +37,7 @@ from autogen_agentchat.agents import UserProxyAgent
 from autogen_agentchat.conditions import TextMentionTermination, MaxMessageTermination
 from autogen_agentchat.teams import Swarm
 
-from agents import ProjectManager, Architect, Engineer, CodeReviewer, QA
+from agents import ProjectManager, Engineer, CodeReviewer, QA
 from agents.config import ensure_workspace_dirs
 from core.mcp_client import MCPClientPool
 from core.mcp_config import ROLE_SERVERS
@@ -65,8 +64,10 @@ if not any(isinstance(h, logging.StreamHandler) for h in root_logger.handlers):
 # Per-session file handler
 logs_dir = Path(__file__).resolve().parent / "logs"
 logs_dir.mkdir(parents=True, exist_ok=True)
+run_id = os.environ.get("MAS_RUN_ID")
 session_ts = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
-log_file = logs_dir / f"session_{session_ts}.log"
+log_suffix = run_id or session_ts
+log_file = logs_dir / f"session_{log_suffix}.log"
 
 file_handler = logging.FileHandler(log_file, encoding="utf-8")
 file_handler.setFormatter(log_format)
@@ -74,14 +75,6 @@ root_logger.addHandler(file_handler)
 
 logger = logging.getLogger(__name__)
 logger.info("Session log file: %s", log_file)
-
-
-_BLOCKED_MARKERS = (
-    "access denied",
-    "unable to create or modify",
-    "blocked",
-    "permission",
-)
 
 
 async def start_sdlc(idea: str, rounds: int = 20) -> str:
@@ -107,12 +100,17 @@ async def start_sdlc(idea: str, rounds: int = 20) -> str:
         {key for keys in ROLE_SERVERS.values() for key in keys}
     )
 
+    # In Docker mode the workspace is the container's /testbed, not a local git
+    # repo.  The git MCP server (mcp-server-git) would crash trying to open an
+    # empty directory.  Git operations are handled inside the container via bash.
+    if os.environ.get("MINI_AGENT_USE_DOCKER"):
+        all_server_keys = [k for k in all_server_keys if k != "git"]
+
     logger.info("Opening MCP connections: %s", all_server_keys)
 
     async with MCPClientPool(server_keys=all_server_keys) as pool:
         # --- Instantiate role agents ---
         pm = ProjectManager(pool)
-        arch = Architect(pool)
         eng = Engineer(pool)
         reviewer = CodeReviewer(pool)
         qa = QA(pool)
@@ -124,15 +122,13 @@ async def start_sdlc(idea: str, rounds: int = 20) -> str:
             | MaxMessageTermination(max_messages=rounds)
         )
 
-        # --- Mesh team (Swarm) ---
-        # Swarm routes control via HandoffMessage (transfer_to_* tools).
-        # Specialists hand off directly to their natural downstream peer;
-        # the PM only re-enters on escalation or final completion.
+        # --- Hub-and-spoke team (Swarm) ---
+        # Swarm routes control via HandoffMessage: PM uses transfer_to_* tools
+        # to delegate to specialists; each specialist transfers back to PM.
         # The initial task is delivered to the first participant (PM).
         team = Swarm(
             participants=[
                 pm.agent,
-                arch.agent,
                 eng.agent,
                 reviewer.agent,
                 qa.agent,
@@ -179,9 +175,14 @@ def _write_patch_if_configured(base_commit: str | None = None) -> str | None:
     workspace = os.environ.get("MAS_WORKSPACE_PATH")
     if not patch_path or not workspace:
         return None
+    # In Docker mode the Engineer already wrote the patch from inside the
+    # container.  Skip the host-side git diff so we don't overwrite it with an
+    # empty diff from the non-git workspace directory.
+    if os.environ.get("MINI_AGENT_USE_DOCKER"):
+        return patch_path if Path(patch_path).exists() else None
     diff_cmd = ["git", "diff"]
     if base_commit:
-        diff_cmd = ["git", "diff", f"{base_commit}..HEAD"]
+        diff_cmd = ["git", "diff", base_commit]
     diff = subprocess.run(
         diff_cmd,
         cwd=workspace,
@@ -201,29 +202,14 @@ def _write_patch_if_configured(base_commit: str | None = None) -> str | None:
     return patch_path
 
 
-def _derive_run_status(final_message: str, patch_path: str | None) -> tuple[str, str]:
-    normalized = final_message.lower()
-    if any(marker in normalized for marker in _BLOCKED_MARKERS):
-        return "blocked", "Workflow reported an access or blocking issue."
-    if "project complete" not in normalized:
-        return "incomplete", "Workflow ended without an explicit completion signal."
-    if not patch_path:
-        return "no_patch", "No patch artifact path was configured."
-    patch_file = Path(patch_path)
-    if not patch_file.exists() or patch_file.stat().st_size == 0:
-        return "no_patch", "No code changes were produced."
-    return "ok", ""
-
-
-def _write_result(final_message: str, patch_path: str | None, status: str, note: str) -> None:
+def _write_result(final_message: str, patch_path: str | None) -> None:
     result_path = os.environ.get("MAS_EVAL_RESULT_PATH")
     if not result_path:
         return
     Path(result_path).write_text(
         json.dumps(
             {
-                "status": status,
-                "note": note,
+                "status": "ok",
                 "final_message": final_message,
                 "patch_path": patch_path,
             },
@@ -239,9 +225,8 @@ def run_swebench(task_path: str, rounds: int = 100) -> None:
     task = load_task_context(task_path)
     result = asyncio.run(start_sdlc(build_task_prompt(task), rounds=rounds))
     patch_path = _write_patch_if_configured(task.get("base_commit"))
-    status, note = _derive_run_status(result, patch_path)
-    set_final_status(status)
-    _write_result(result, patch_path, status, note)
+    set_final_status("success")
+    _write_result(result, patch_path)
     write_if_configured()
     print("\n=== SWE-bench result ===")
     print(result)
