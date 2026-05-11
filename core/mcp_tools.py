@@ -267,7 +267,7 @@ def _run_workspace_command_in_docker(
     script_parts.append(shlex.join(parts))
     script = " && ".join(script_parts)
 
-    docker_cmd = ["docker", "run", "--rm", "--workdir", "/testbed"]
+    docker_cmd = ["docker", "run", "--rm", "--entrypoint", "", "--workdir", "/testbed"]
     if mount_run_dir:
         docker_cmd += ["-v", f"{run_dir}:/run_dir:ro"]
     docker_cmd += [image, "bash", "-lc", script]
